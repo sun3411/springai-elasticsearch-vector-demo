@@ -1,91 +1,124 @@
+# Spring AI + Elasticsearch + Ollama RAG系统
 
-# SpringAI Elasticsearch Vector Store Demo
+基于Spring AI框架构建的RAG（检索增强生成）系统，使用Elasticsearch作为向量数据库，Ollama作为本地AI模型。
 
-This project is a demo for setting up and using Elasticsearch as a vector store in a Spring Boot application. It demonstrates how to index and search vectors using cosine similarity with Elasticsearch.
+## 系统架构
 
-## Features
-- Vector search using Elasticsearch.
-- Integration with Spring Boot for easy management.
-- Support for cosine similarity.
-- Demonstrates integration of vector storage into an AI system using Spring AI.
+- **Spring Boot 3.3.4**: 后端框架
+- **Spring AI 1.0.0-M2**: AI集成框架
+- **Elasticsearch**: 向量存储
+- **Ollama**: 本地AI模型服务
 
-## Prerequisites
-Before running the application, ensure you have the following installed:
-- [Docker](https://www.docker.com/get-started)
-- JDK 17 or higher
-- Maven
-- OpenSSL (for generating certificates)
+## 环境要求
 
-## Getting Started
+- Java 23
+- Docker (用于Elasticsearch)
+- Ollama (本地AI模型)
 
-### 1. Clone the Repository
+## 快速开始
+
+### 1. 安装Ollama
+
+#### macOS安装
 ```bash
-git clone https://github.com/LegPro/springai-elasticsearch-vector-demo.git
-cd springai-elasticsearch-vector-demo
+# 下载并安装Ollama
+curl -fsSL https://ollama.ai/install.sh | sh
+
+# 启动Ollama服务
+ollama serve
 ```
 
-### 2. Running Elasticsearch in Docker
-First, create a Docker network:
+#### 下载模型
 ```bash
-docker network create somenetwork
+# 下载推荐的7B模型（适合MacBook）
+ollama pull qwen2.5:7b
+
+# 或者下载其他模型
+ollama pull llama2:7b
+ollama pull gemma2:9b
 ```
 
-Then, start Elasticsearch container:
+### 2. 启动Elasticsearch
+
 ```bash
-docker run -it --name elasticsearch --net somenetwork -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" elasticsearch:8.15.1
+# 进入elasticsearch目录
+cd elasticsearch
+
+# 启动Elasticsearch容器
+docker-compose up -d
 ```
 
-### 3. Import Elasticsearch Certificate
+### 3. 配置应用
 
-#### Step 1: Retrieve Elasticsearch Certificate
-Run the following command to extract the certificate from Elasticsearch:
-```bash
-# In C:/temp
-openssl s_client -showcerts -connect localhost:9200 </dev/null | sed -n -e '/-.BEGIN/,/-.END/ p' > certifs.cer
+编辑 `src/main/resources/application.properties`:
+
+```properties
+# Ollama配置
+spring.ai.ollama.base-url=http://localhost:11434
+spring.ai.ollama.chat.model=qwen2.5:7b
+spring.ai.ollama.embedding.model=qwen2.5:7b
 ```
 
-#### Step 2: Import Certificate into JDK
-Navigate to your JDK's `bin` directory and import the certificate using `keytool`:
-```bash
-# In jdk/bin
-keytool -import -alias elasticsearchcert -file "C:\temp\certifs.cer" -keystore "C:\Users\vhinu\.jdks\openjdk-23\lib\security\cacerts"
-```
-This step is necessary for establishing a secure connection between the Spring Boot application and Elasticsearch.
-
-### 4. Run the Application
-After setting up Elasticsearch, you can start the Spring Boot application using Maven:
+### 4. 运行应用
 
 ```bash
+# 编译并运行
 mvn spring-boot:run
 ```
 
-### 5. Application Properties Configuration
+## API接口
 
-The important configuration for Elasticsearch is defined in the `application.properties` file:
+### 文档管理
 
-```properties
-spring.application.name=springai-elasticsearch-vector-demo
+- `POST /api/documents/load` - 加载示例文档
+- `POST /api/documents/add` - 添加新文档
+- `GET /api/documents/search?query={query}` - 搜索文档
 
-# OpenSearch Vector Store Settings
-spring.ai.vectorstore.elasticsearch.initialize-schema=true
-spring.ai.vectorstore.elasticsearch.index-name=spring-ai-document-index
-spring.ai.vectorstore.elasticsearch.dimensions=1536
-spring.ai.vectorstore.elasticsearch.similarity=cosine
+### RAG问答
 
-# OpenSearch Connection Settings
-spring.elasticsearch.connection-timeout=1s
-spring.elasticsearch.uris=https://localhost:9200
-spring.elasticsearch.restclient.sniffer.delay-after-failure=1m
-spring.elasticsearch.restclient.sniffer.interval=5m
-spring.elasticsearch.socket-keep-alive=true
-spring.elasticsearch.socket-timeout=10000
+- `POST /api/chat/ask` - 智能问答
 
-# OpenSearch Credentials
-spring.elasticsearch.password=your_password_here
-spring.elasticsearch.username=elastic
-```
+## 性能优化建议
 
-Make sure to update the password and username for the Elasticsearch connection if necessary.
+### MacBook优化
 
-### 6. Testing the Application
-Once everything is set up, you can interact with the vector store via the exposed APIs. Use Postman or curl to send requests for indexing and searching vectors.
+1. **模型选择**: 优先使用7B参数模型
+2. **内存管理**: 确保有足够可用内存
+3. **GPU加速**: M系列芯片自动启用Metal加速
+
+### 系统调优
+
+1. **向量维度**: 根据模型调整embedding维度
+2. **分块大小**: 优化文档分块策略
+3. **检索参数**: 调整相似度阈值和返回数量
+
+## 故障排除
+
+### Ollama常见问题
+
+1. **模型下载失败**: 检查网络连接
+2. **内存不足**: 选择更小的模型
+3. **启动失败**: 检查端口11434是否被占用
+
+### Elasticsearch问题
+
+1. **连接失败**: 检查Docker容器状态
+2. **认证错误**: 确认用户名密码配置
+3. **索引创建失败**: 检查schema初始化设置
+
+## 模型推荐
+
+### 中文场景
+
+- `qwen2.5:7b` - 阿里开源，中文支持优秀
+- `chatglm3:6b` - 清华开源，中文对话能力强
+
+### 英文场景
+
+- `llama2:7b` - Meta开源，通用性能好
+- `gemma2:9b` - Google开源，性能稳定
+
+### 轻量级选择
+
+- `phi3:mini` - 微软开源，3.8B参数
+- `tinyllama:1.1b` - 超轻量级，适合资源受限环境
