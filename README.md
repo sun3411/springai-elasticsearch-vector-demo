@@ -68,15 +68,102 @@ mvn spring-boot:run
 
 ## API接口
 
-### 文档管理
+### 基础功能
 
 - `POST /api/documents/load` - 加载示例文档
 - `POST /api/documents/add` - 添加新文档
 - `GET /api/documents/search?query={query}` - 搜索文档
 
-### RAG问答
+### 法律Agent功能
 
-- `POST /api/chat/ask` - 智能问答
+#### 智能法律查询
+```bash
+POST /api/legal/query
+Content-Type: application/json
+
+{
+  "question": "查询关于环境污染的行政处罚案例"
+}
+```
+
+#### 统计分析
+```bash
+POST /api/legal/analysis
+Content-Type: application/json
+
+{
+  "analysisType": "处罚金额分布分析"
+}
+```
+
+#### 案例对比
+```bash
+POST /api/legal/compare
+Content-Type: application/json
+
+{
+  "case1": "案例1的详细信息",
+  "case2": "案例2的详细信息"
+}
+```
+
+#### 法律风险评估
+```bash
+POST /api/legal/risk-assessment
+Content-Type: application/json
+
+{
+  "businessType": "制造业"
+}
+```
+
+### 数据管理
+
+- `POST /api/data/import-from-lays` - 从lays索引导入数据
+- `POST /api/data/import-legal-cases` - 批量导入法律案件
+- `GET /api/data/import-status` - 检查导入状态
+
+## 法律Agent特性
+
+### 🎯 专业功能
+
+1. **智能法律查询**
+   - 基于语义相似度的案例检索
+   - 专业法律分析和建议
+   - 处罚规律总结
+
+2. **统计分析**
+   - 处罚金额分布分析
+   - 违法类型统计
+   - 时间趋势分析
+   - 部门处理情况统计
+
+3. **案例对比**
+   - 相似案例对比分析
+   - 处罚标准对比
+   - 处理程序对比
+
+4. **风险评估**
+   - 行业法律风险识别
+   - 合规建议提供
+   - 预防措施建议
+
+### 📊 数据字段支持
+
+支持以下法律案件字段的智能查询：
+- `caseId`: 案件编号
+- `violation`: 违法行为
+- `penaltyType`: 处罚类型
+- `penaltyContent`: 处罚内容
+- `penaltySumRmbSum`: 处罚金额
+- `lawlessIncomeRmbSum`: 违法收入
+- `recordDept`: 处理部门
+- `recordPpl`: 处理人员
+- `decisionDate`: 决定日期
+- `recordDate`: 立案日期
+- `source`: 案件来源
+- `punishCategory`: 处罚类别
+- `caseLawlessFact`: 案件事实
 
 ## 性能优化建议
 
@@ -122,3 +209,24 @@ mvn spring-boot:run
 
 - `phi3:mini` - 微软开源，3.8B参数
 - `tinyllama:1.1b` - 超轻量级，适合资源受限环境
+
+## 使用示例
+
+### 法律查询示例
+
+```bash
+# 查询环境污染案例
+curl -X POST http://localhost:8080/api/legal/query \
+  -H "Content-Type: application/json" \
+  -d '{"question": "查询关于环境污染的行政处罚案例，重点关注处罚金额和处理部门"}'
+
+# 分析处罚金额分布
+curl -X POST http://localhost:8080/api/legal/analysis \
+  -H "Content-Type: application/json" \
+  -d '{"analysisType": "处罚金额分布分析"}'
+
+# 制造业风险评估
+curl -X POST http://localhost:8080/api/legal/risk-assessment \
+  -H "Content-Type: application/json" \
+  -d '{"businessType": "制造业"}'
+```
